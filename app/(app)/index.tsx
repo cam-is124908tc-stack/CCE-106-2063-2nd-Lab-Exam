@@ -1,4 +1,3 @@
-import { Link } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -18,8 +17,6 @@ export default function DashboardScreen() {
         <Text style={styles.heading}>Session Status</Text>
         <Text style={styles.subtitle}>{token ? 'Authenticated' : 'Not Available'}</Text>
       </View>
-      <Link href="/sign-in" style={styles.link}>Open Sign In</Link>
-      <Text style={styles.note}>Exam starter: screens are accessible while route protection is incomplete.</Text>
     </ScrollView>
   );
 }
@@ -33,6 +30,4 @@ const styles = StyleSheet.create({
   heading: { color: '#17324d', fontSize: 18, fontWeight: '600' },
   button: { backgroundColor: '#245bb2', padding: 16, borderRadius: 8 },
   buttonText: { color: '#ffffff', fontWeight: '600' },
-  link: { color: '#245bb2', paddingVertical: 10 },
-  note: { color: '#536579', fontSize: 12 },
 });
