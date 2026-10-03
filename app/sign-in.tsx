@@ -1,21 +1,46 @@
 /* eslint-disable @typescript-eslint/no-unused-vars -- Setters are reserved for the login exercise. */
 import { useState } from 'react';
+import { useRouter } from 'expo-router';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { API_BASE_URL } from '@/constants/api';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function SignInScreen() {
+  const router = useRouter();
+  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   const handleLogin = async () => {
-    // TODO EXAM: 1. Validate email and password.
-    // TODO EXAM: 2. Set loading and clear previous errors.
-    // TODO EXAM: 3. POST to /login using fetch() and async/await.
-    // TODO EXAM: 4. Check response.ok and parse the returned JSON.
-    // TODO EXAM: 5. Pass the returned access token and user to the context login().
-    // TODO EXAM: 6. Navigate using router.replace() after successful authentication.
-    // TODO EXAM: 7. Handle login errors and stop loading in finally.
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!/^\S+@\S+\.\S+$/.test(normalizedEmail) || !password) {
+      setError('Enter a valid email and password.');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+    try {
+      const response = await fetch(`${API_BASE_URL}/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: normalizedEmail, password }),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.message || 'Unable to sign in.');
+      if (typeof payload.accessToken !== 'string' || !payload.user) {
+        throw new Error('The API returned an invalid login response.');
+      }
+      await login(payload.accessToken, payload.user);
+      setPassword('');
+      router.replace('/(app)');
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Unable to sign in. Check your connection and try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -35,7 +60,7 @@ export default function SignInScreen() {
         <Pressable accessibilityRole="button" style={styles.button} onPress={handleLogin} disabled={loading}>
           <Text style={styles.buttonText}>{loading ? 'Signing in…' : 'Login'}</Text>
         </Pressable>
-        <Text style={styles.note}>Exam starter: login is not implemented yet.</Text>
+        <Text style={styles.note}>Temporary API demo: student@example.com / password123</Text>
       </View>
     </ScrollView>
   );

@@ -2,28 +2,41 @@
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import StudentCard, { type Student } from '@/components/StudentCard';
+import { API_BASE_URL } from '@/constants/api';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function StudentsScreen() {
+  const { token } = useAuth();
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
 
   const loadStudents = async () => {
-    // TODO EXAM: 1. Set loading and clear previous errors.
-    // TODO EXAM: 2. Call GET /students using fetch() and async/await.
-    // TODO EXAM: 3. Include Authorization: Bearer TOKEN from useAuth() if required.
-    // TODO EXAM: 4. Check response.ok and handle 401 Unauthorized.
-    // TODO EXAM: 5. Parse JSON and save the student array to state.
-    // TODO EXAM: 6. Handle errors and stop loading inside finally.
+    setLoading(true);
+    setError('');
+    try {
+      const response = await fetch(`${API_BASE_URL}/students`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.message || 'Unable to load students.');
+      if (!Array.isArray(payload)) throw new Error('The API returned an invalid student list.');
+      setStudents(payload);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Unable to load students. Check your connection.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
-    // TODO EXAM: Call loadStudents() when the screen loads.
-  }, []);
+    void loadStudents();
+  }, [token]);
 
-  // TODO EXAM: Use filter() to return students whose name matches the search text.
-  const filteredStudents = students;
+  const filteredStudents = students.filter((student) =>
+    (student.name || '').toLowerCase().includes(search.trim().toLowerCase()),
+  );
 
   return (
     <View style={styles.container}>
