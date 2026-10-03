@@ -1,3 +1,4 @@
+import { Link } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useAuth } from '@/hooks/useAuth';
 
