@@ -1,11 +1,9 @@
 import { useState } from 'react';
-import { useRouter } from 'expo-router';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { API_BASE_URL } from '@/constants/api';
 import { useAuth } from '@/hooks/useAuth';
 
 export default function SignInScreen() {
-  const router = useRouter();
   const { login } = useAuth();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -21,11 +19,14 @@ export default function SignInScreen() {
 
     setLoading(true);
     setError('');
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
     try {
       const response = await fetch(`${API_BASE_URL}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username: normalizedUsername, password }),
+        signal: controller.signal,
       });
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.message || 'Unable to sign in.');
@@ -39,10 +40,12 @@ export default function SignInScreen() {
         role: payload.role,
       });
       setPassword('');
-      router.replace('/(app)');
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Unable to sign in. Check your connection and try again.');
+      setError(cause instanceof Error && cause.name === 'AbortError'
+        ? 'Login timed out. Check your internet connection and try again.'
+        : cause instanceof Error ? cause.message : 'Unable to sign in. Check your connection and try again.');
     } finally {
+      clearTimeout(timeoutId);
       setLoading(false);
     }
   };
