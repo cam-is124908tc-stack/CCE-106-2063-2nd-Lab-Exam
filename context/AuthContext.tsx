@@ -1,6 +1,7 @@
-/* eslint-disable @typescript-eslint/no-unused-vars -- Setters and imports are reserved for exam TODOs. */
-import { createContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useEffect, useState, type ReactNode } from 'react';
+import { Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
+import { API_BASE_URL } from '@/constants/api';
 
 export type User = {
   id?: string | number;
@@ -23,35 +24,61 @@ export const AuthContext = createContext<AuthContextValue | undefined>(undefined
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
-  // False keeps the unfinished starter usable; no session has been restored yet.
-  const [authLoading, setAuthLoading] = useState(false);
+  const [authLoading, setAuthLoading] = useState(true);
 
-  const login = async (accessToken: string, userData: User) => {
+  const login = useCallback(async (accessToken: string, userData: User) => {
+    if (Platform.OS !== 'web' && await SecureStore.isAvailableAsync()) {
+      await SecureStore.setItemAsync('accessToken', accessToken);
+    }
     setToken(accessToken);
     setUser(userData);
-  };
-
-  const logout = async () => {
-    // TODO EXAM: Delete the saved token using SecureStore.deleteItemAsync().
-    // TODO EXAM: Clear token state and user state.
-    // TODO EXAM: Handle storage errors and redirect to /sign-in after logout.
-  };
-
-  const restoreSession = async () => {
-    // TODO EXAM: Set authLoading while restoring the session.
-    // TODO EXAM: Read the saved token with SecureStore.getItemAsync().
-    // TODO EXAM: Validate the token via GET /profile with a Bearer token.
-    // TODO EXAM: Update token and user state for a valid session.
-    // TODO EXAM: Handle 401 Unauthorized / expired sessions and clear invalid credentials.
-    // TODO EXAM: Handle errors and stop authLoading in finally.
-  };
-
-  useEffect(() => {
-    // TODO EXAM: Call restoreSession() on startup.
   }, []);
 
-  // SecureStore is native-only. The web skeleton makes no storage calls.
-  // TODO EXAM: Check platform availability before storage calls; test persistence on Android/iOS.
+  const logout = useCallback(async () => {
+    try {
+      if (Platform.OS !== 'web' && await SecureStore.isAvailableAsync()) {
+        await SecureStore.deleteItemAsync('accessToken');
+      }
+    } catch {
+      // Clear in-memory auth even if secure storage fails.
+    } finally {
+      setToken(null);
+      setUser(null);
+    }
+  }, []);
+
+  const restoreSession = useCallback(async () => {
+    setAuthLoading(true);
+    try {
+      if (Platform.OS === 'web' || !(await SecureStore.isAvailableAsync())) return;
+      const savedToken = await SecureStore.getItemAsync('accessToken');
+      if (!savedToken) return;
+
+      const response = await fetch(`${API_BASE_URL}/auth/me`, {
+        headers: { Authorization: `Bearer ${savedToken}` },
+      });
+      if (!response.ok) {
+        await SecureStore.deleteItemAsync('accessToken');
+        return;
+      }
+      const profile = await response.json();
+      setToken(savedToken);
+      setUser({
+        ...profile,
+        name: [profile.firstName, profile.lastName].filter(Boolean).join(' '),
+      });
+    } catch {
+      setToken(null);
+      setUser(null);
+    } finally {
+      setAuthLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void restoreSession();
+  }, [restoreSession]);
+
   return (
     <AuthContext.Provider value={{ token, user, authLoading, login, logout, restoreSession }}>
       {children}

@@ -1,5 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unused-vars -- State setters and loader are exam placeholders. */
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { type Student } from '@/components/StudentCard';
@@ -9,12 +8,12 @@ import { useAuth } from '@/hooks/useAuth';
 export default function StudentDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const { token } = useAuth();
+  const { token, logout } = useAuth();
   const [student, setStudent] = useState<Student | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const loadStudent = async () => {
+  const loadStudent = useCallback(async () => {
     if (!id || !/^\d+$/.test(id)) {
       setStudent(null);
       setError('Invalid student ID.');
@@ -24,25 +23,32 @@ export default function StudentDetailsScreen() {
     setLoading(true);
     setError('');
     try {
-      const response = await fetch(`${API_BASE_URL}/students/${encodeURIComponent(id)}`, {
+      const response = await fetch(`${API_BASE_URL}/users/${encodeURIComponent(id)}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       const payload = await response.json();
-      if (response.status === 401) throw new Error('Your session has expired. Please sign in again.');
+      if (response.status === 401) {
+        await logout();
+        throw new Error('Your session has expired. Please sign in again.');
+      }
       if (response.status === 404) throw new Error('Student not found.');
       if (!response.ok) throw new Error(payload.message || 'Unable to load student details.');
-      setStudent(payload);
+      setStudent({
+        ...payload,
+        name: [payload.firstName, payload.lastName].filter(Boolean).join(' '),
+        course: payload.company?.department,
+      });
     } catch (cause) {
       setStudent(null);
       setError(cause instanceof Error ? cause.message : 'Unable to load student details.');
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, token, logout]);
 
   useEffect(() => {
     void loadStudent();
-  }, [id, token]);
+  }, [loadStudent]);
 
   return (
     <ScrollView contentContainerStyle={styles.container}>

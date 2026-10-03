@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars -- Setters are reserved for the login exercise. */
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
@@ -8,32 +7,37 @@ import { useAuth } from '@/hooks/useAuth';
 export default function SignInScreen() {
   const router = useRouter();
   const { login } = useAuth();
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   const handleLogin = async () => {
-    const normalizedEmail = email.trim().toLowerCase();
-    if (!/^\S+@\S+\.\S+$/.test(normalizedEmail) || !password) {
-      setError('Enter a valid email and password.');
+    const normalizedUsername = username.trim();
+    if (!normalizedUsername || !password) {
+      setError('Enter your username and password.');
       return;
     }
 
     setLoading(true);
     setError('');
     try {
-      const response = await fetch(`${API_BASE_URL}/login`, {
+      const response = await fetch(`${API_BASE_URL}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: normalizedEmail, password }),
+        body: JSON.stringify({ username: normalizedUsername, password }),
       });
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.message || 'Unable to sign in.');
-      if (typeof payload.accessToken !== 'string' || !payload.user) {
+      if (typeof payload.accessToken !== 'string' || !payload.id) {
         throw new Error('The API returned an invalid login response.');
       }
-      await login(payload.accessToken, payload.user);
+      await login(payload.accessToken, {
+        id: payload.id,
+        name: [payload.firstName, payload.lastName].filter(Boolean).join(' '),
+        email: payload.email,
+        role: payload.role,
+      });
       setPassword('');
       router.replace('/(app)');
     } catch (cause) {
@@ -49,8 +53,8 @@ export default function SignInScreen() {
         <Text style={styles.eyebrow}>CCE106 • PRACTICAL EXAMINATION</Text>
         <Text style={styles.title}>Student Service Portal</Text>
         <Text style={styles.subtitle}>Sign in to access student services.</Text>
-        <Text style={styles.label}>Email</Text>
-        <TextInput style={styles.input} accessibilityLabel="Email" placeholder="student@example.com" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" autoCorrect={false} />
+        <Text style={styles.label}>Username</Text>
+        <TextInput style={styles.input} accessibilityLabel="Username" placeholder="emilys" value={username} onChangeText={setUsername} autoCapitalize="none" autoCorrect={false} />
         <Text style={styles.label}>Password</Text>
         <TextInput style={styles.input} accessibilityLabel="Password" placeholder="Enter your password" value={password} onChangeText={setPassword} secureTextEntry />
         <View style={styles.feedback} accessibilityLiveRegion="polite">
@@ -60,7 +64,7 @@ export default function SignInScreen() {
         <Pressable accessibilityRole="button" style={styles.button} onPress={handleLogin} disabled={loading}>
           <Text style={styles.buttonText}>{loading ? 'Signing in…' : 'Login'}</Text>
         </Pressable>
-        <Text style={styles.note}>Temporary API demo: student@example.com / password123</Text>
+        <Text style={styles.note}>Demo credentials: emilys / emilyspass</Text>
       </View>
     </ScrollView>
   );

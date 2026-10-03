@@ -1,38 +1,45 @@
-/* eslint-disable @typescript-eslint/no-unused-vars -- State setters and loader are exam placeholders. */
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import StudentCard, { type Student } from '@/components/StudentCard';
 import { API_BASE_URL } from '@/constants/api';
 import { useAuth } from '@/hooks/useAuth';
 
 export default function StudentsScreen() {
-  const { token } = useAuth();
+  const { token, logout } = useAuth();
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
 
-  const loadStudents = async () => {
+  const loadStudents = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
-      const response = await fetch(`${API_BASE_URL}/students`, {
+      const response = await fetch(`${API_BASE_URL}/users`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       const payload = await response.json();
+      if (response.status === 401) {
+        await logout();
+        throw new Error('Your session expired. Please sign in again.');
+      }
       if (!response.ok) throw new Error(payload.message || 'Unable to load students.');
-      if (!Array.isArray(payload)) throw new Error('The API returned an invalid student list.');
-      setStudents(payload);
+      if (!Array.isArray(payload.users)) throw new Error('The API returned an invalid user list.');
+      setStudents(payload.users.map((person: { firstName?: string; lastName?: string; company?: { department?: string } }) => ({
+        ...person,
+        name: [person.firstName, person.lastName].filter(Boolean).join(' '),
+        course: person.company?.department,
+      })));
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Unable to load students. Check your connection.');
     } finally {
       setLoading(false);
     }
-  };
+  }, [token, logout]);
 
   useEffect(() => {
     void loadStudents();
-  }, [token]);
+  }, [loadStudents]);
 
   const filteredStudents = students.filter((student) =>
     (student.name || '').toLowerCase().includes(search.trim().toLowerCase()),
