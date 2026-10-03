@@ -3,26 +3,46 @@ import { useEffect, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { type Student } from '@/components/StudentCard';
+import { API_BASE_URL } from '@/constants/api';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function StudentDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const { token } = useAuth();
   const [student, setStudent] = useState<Student | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   const loadStudent = async () => {
-    // TODO EXAM: Validate the id read from useLocalSearchParams().
-    // TODO EXAM: Set loading and clear previous errors.
-    // TODO EXAM: GET /students/{id} with fetch(), async/await, and a Bearer token.
-    // TODO EXAM: Check response.ok; handle 401 Unauthorized and missing records.
-    // TODO EXAM: Parse JSON and update student state.
-    // TODO EXAM: Handle errors and stop loading in finally.
+    if (!id || !/^\d+$/.test(id)) {
+      setStudent(null);
+      setError('Invalid student ID.');
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    setError('');
+    try {
+      const response = await fetch(`${API_BASE_URL}/students/${encodeURIComponent(id)}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      const payload = await response.json();
+      if (response.status === 401) throw new Error('Your session has expired. Please sign in again.');
+      if (response.status === 404) throw new Error('Student not found.');
+      if (!response.ok) throw new Error(payload.message || 'Unable to load student details.');
+      setStudent(payload);
+    } catch (cause) {
+      setStudent(null);
+      setError(cause instanceof Error ? cause.message : 'Unable to load student details.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
-    // TODO EXAM: Call loadStudent() when id changes.
-  }, [id]);
+    void loadStudent();
+  }, [id, token]);
 
   return (
     <ScrollView contentContainerStyle={styles.container}>

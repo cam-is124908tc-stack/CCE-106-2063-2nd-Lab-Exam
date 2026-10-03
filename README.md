@@ -4,42 +4,44 @@
 
 ### Student Information
 
-Name:
+Name: Cesario G. Am-is Jr
 
-Section:
+Section: CCE 106-2063
 
-Date:
+Date: 2026-10-03
 
 ### Required Features
 
-- [ ] Login
-- [ ] Authentication state
-- [ ] Secure token storage
-- [ ] Protected navigation
-- [ ] Dashboard
-- [ ] Student API request
-- [ ] Loading state
-- [ ] Error state
-- [ ] Empty state
-- [ ] Search/filter
-- [ ] Dynamic student details
-- [ ] Profile
-- [ ] Session restoration
-- [ ] Logout
+- [x] Login
+- [x] Authentication state
+- [x] Secure token storage
+- [x] Protected navigation
+- [x] Dashboard
+- [x] Student API request
+- [x] Loading state
+- [x] Error state
+- [x] Empty state
+- [x] Search/filter
+- [x] Dynamic student details
+- [x] Profile
+- [x] Session restoration
+- [x] Logout
 
 ### API
 
-Base URL: `REPLACE_WITH_EXAM_API` (set in `constants/api.ts`)
+The app currently uses DummyJSON, as confirmed with the Postman login request.
+Set `EXPO_PUBLIC_API_BASE_URL` to change the API base URL.
 
-POST /login
+POST /auth/login with `{ "username": "...", "password": "..." }`
 
-GET /students
+GET /auth/me
 
-GET /students/{id}
+GET /users
 
-GET /profile
+GET /users/{id}
 
-Use the instructor's API documentation for payloads and response fields.
+The student screens use DummyJSON's sample users as student records. These are
+demo records, not records from the instructor's student database.
 
 ### How to Run
 
@@ -48,21 +50,15 @@ npm install
 npx expo start
 ```
 
-Press `w` for web, or run `npm run web` directly.
+Press `w` for web. The app checks platform availability before using SecureStore;
+web sessions are kept in memory only.
 
-The starter opens the dashboard without authentication so its screens can be inspected.
-Use **Open Sign In** to preview the login screen. Login, logout, and View Details
-buttons intentionally do nothing until their TODOs are completed. Student screens
-initially show loading until students implement the loaders. Preview the detail
-layout on web at `/student/1`; this does not create a sample API record.
+The app opens on the sign-in screen when there is no active session. Use the
+DummyJSON demo credentials `emilys` / `emilyspass` to sign in. Preview a student
+detail at `/student/1` after signing in.
 
-Search for `TODO EXAM` throughout the project. No requests or credentials are
-provided. Protect both the application tabs and the student detail route.
-
-Expo SecureStore is used only in `context/AuthContext.tsx`. Its methods are not
-implemented in this starter. SecureStore supports native platforms, not web;
-check availability before calling it and verify secure session persistence on
-Android/iOS. See the [Expo SDK 54 SecureStore documentation](https://docs.expo.dev/versions/v54.0.0/sdk/securestore/).
+Expo SecureStore is used in `context/AuthContext.tsx` for native token storage.
+See the [Expo SDK 54 SecureStore documentation](https://docs.expo.dev/versions/v54.0.0/sdk/securestore/).
 
 Compiler and lint checks:
 
