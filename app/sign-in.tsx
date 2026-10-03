@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { API_BASE_URL } from '@/constants/api';
+import { palette } from '@/constants/palette';
 import { useAuth } from '@/hooks/useAuth';
 
 export default function SignInScreen() {
@@ -11,8 +12,8 @@ export default function SignInScreen() {
   const [error, setError] = useState('');
 
   const handleLogin = async () => {
-    const normalizedUsername = username.trim();
-    if (!normalizedUsername || !password) {
+    const cleanUsername = username.trim();
+    if (!cleanUsername || !password) {
       setError('Enter your username and password.');
       return;
     }
@@ -25,7 +26,7 @@ export default function SignInScreen() {
       const response = await fetch(`${API_BASE_URL}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: normalizedUsername, password }),
+        body: JSON.stringify({ username: cleanUsername, password }),
         signal: controller.signal,
       });
       const payload = await response.json();
@@ -42,8 +43,8 @@ export default function SignInScreen() {
       setPassword('');
     } catch (cause) {
       setError(cause instanceof Error && cause.name === 'AbortError'
-        ? 'Login timed out. Check your internet connection and try again.'
-        : cause instanceof Error ? cause.message : 'Unable to sign in. Check your connection and try again.');
+        ? 'Login timed out. Check your connection and try again.'
+        : cause instanceof Error ? cause.message : 'Unable to sign in.');
     } finally {
       clearTimeout(timeoutId);
       setLoading(false);
@@ -51,39 +52,125 @@ export default function SignInScreen() {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+    <ScrollView contentContainerStyle={styles.page} keyboardShouldPersistTaps="handled">
       <View style={styles.card}>
-        <Text style={styles.eyebrow}>CCE106 • PRACTICAL EXAMINATION</Text>
-        <Text style={styles.title}>Student Service Portal</Text>
+        <Text style={styles.school}>CCE 106 · Student Services</Text>
+        <Text style={styles.title}>Sign In</Text>
         <Text style={styles.subtitle}>Sign in to access student services.</Text>
+
         <Text style={styles.label}>Username</Text>
-        <TextInput style={styles.input} accessibilityLabel="Username" placeholder="emilys" value={username} onChangeText={setUsername} autoCapitalize="none" autoCorrect={false} />
+        <TextInput
+          style={styles.input}
+          accessibilityLabel="Username"
+          placeholder="Enter your username"
+          value={username}
+          onChangeText={setUsername}
+          autoCapitalize="none"
+          autoCorrect={false}
+          autoComplete="username"
+          returnKeyType="next"
+        />
+
         <Text style={styles.label}>Password</Text>
-        <TextInput style={styles.input} accessibilityLabel="Password" placeholder="Enter your password" value={password} onChangeText={setPassword} secureTextEntry />
-        <View style={styles.feedback} accessibilityLiveRegion="polite">
-          {loading && <ActivityIndicator color="#245bb2" accessibilityLabel="Signing in" />}
-          {error ? <Text style={styles.error}>{error}</Text> : null}
-        </View>
-        <Pressable accessibilityRole="button" style={styles.button} onPress={handleLogin} disabled={loading}>
-          <Text style={styles.buttonText}>{loading ? 'Signing in…' : 'Login'}</Text>
+        <TextInput
+          style={styles.input}
+          accessibilityLabel="Password"
+          placeholder="Enter your password"
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry
+          autoComplete="current-password"
+          returnKeyType="go"
+          onSubmitEditing={() => void handleLogin()}
+        />
+
+        {error ? <Text style={styles.error} accessibilityLiveRegion="polite">{error}</Text> : null}
+
+        <Pressable
+          accessibilityRole="button"
+          style={({ pressed }) => [styles.button, pressed && styles.pressed]}
+          onPress={() => void handleLogin()}
+          disabled={loading}
+        >
+          {loading ? <ActivityIndicator color={palette.surface} /> : <Text style={styles.buttonText}>Login</Text>}
         </Pressable>
-        <Text style={styles.note}>Demo credentials: emilys / emilyspass</Text>
+
+        <Text style={styles.demo}>Demo credentials: emilys / emilyspass</Text>
       </View>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flexGrow: 1, justifyContent: 'center', padding: 24, backgroundColor: '#f2f5fa' },
-  card: { width: '100%', maxWidth: 440, alignSelf: 'center', padding: 24, borderRadius: 16, backgroundColor: '#ffffff' },
-  eyebrow: { fontSize: 11, fontWeight: '700', color: '#245bb2', marginBottom: 12 },
-  title: { fontSize: 28, fontWeight: '700', color: '#17324d' },
-  subtitle: { color: '#536579', marginTop: 8, marginBottom: 24 },
-  label: { color: '#17324d', fontWeight: '600', marginBottom: 8 },
-  input: { borderWidth: 1, borderColor: '#c6d2e1', borderRadius: 8, padding: 14, fontSize: 16, marginBottom: 16, color: '#17324d' },
-  feedback: { minHeight: 28 },
-  error: { color: '#b42318' },
-  button: { backgroundColor: '#245bb2', padding: 15, borderRadius: 8, alignItems: 'center' },
-  buttonText: { color: '#ffffff', fontWeight: '700' },
-  note: { color: '#536579', fontSize: 12, marginTop: 20 },
+  page: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    backgroundColor: palette.background,
+    padding: 20,
+  },
+  card: {
+    width: '100%',
+    maxWidth: 440,
+    alignSelf: 'center',
+    backgroundColor: palette.surface,
+    borderRadius: 12,
+    padding: 22,
+    gap: 10,
+  },
+  school: {
+    color: palette.primary,
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  title: {
+    color: palette.ink,
+    fontSize: 26,
+    fontWeight: '700',
+    marginTop: 6,
+  },
+  subtitle: {
+    color: palette.muted,
+    fontSize: 13,
+    marginBottom: 12,
+  },
+  label: {
+    color: palette.ink,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  input: {
+    height: 46,
+    borderWidth: 1,
+    borderColor: palette.line,
+    borderRadius: 8,
+    backgroundColor: palette.background,
+    color: palette.ink,
+    paddingHorizontal: 12,
+    marginBottom: 8,
+  },
+  error: {
+    color: palette.danger,
+    fontSize: 13,
+  },
+  button: {
+    minHeight: 46,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: palette.primary,
+    borderRadius: 8,
+    marginTop: 10,
+  },
+  buttonText: {
+    color: palette.surface,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  pressed: {
+    opacity: 0.8,
+  },
+  demo: {
+    color: palette.muted,
+    fontSize: 11,
+    marginTop: 4,
+  },
 });

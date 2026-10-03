@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import StudentCard, { type Student } from '@/components/StudentCard';
 import { API_BASE_URL } from '@/constants/api';
+import { palette } from '@/constants/palette';
 import { useAuth } from '@/hooks/useAuth';
 
 export default function StudentsScreen() {
@@ -31,7 +32,7 @@ export default function StudentsScreen() {
         course: person.company?.department,
       })));
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Unable to load students. Check your connection.');
+      setError(cause instanceof Error ? cause.message : 'Unable to load students.');
     } finally {
       setLoading(false);
     }
@@ -46,19 +47,38 @@ export default function StudentsScreen() {
   );
 
   return (
-    <View style={styles.container}>
+    <View style={styles.page}>
       <Text style={styles.title}>Students</Text>
-      <TextInput style={styles.input} accessibilityLabel="Search students" placeholder="Search by name" value={search} onChangeText={setSearch} />
+      <Text style={styles.subtitle}>Find a student and view their details.</Text>
+
+      <TextInput
+        style={styles.search}
+        accessibilityLabel="Search students"
+        placeholder="Search by name"
+        value={search}
+        onChangeText={setSearch}
+        returnKeyType="search"
+      />
+
       {loading ? (
-        <View style={styles.state}><ActivityIndicator color="#245bb2" /><Text style={styles.text}>Loading students…</Text><Text style={styles.note}>Complete loadStudents() to finish this state.</Text></View>
+        <View style={styles.message}>
+          <ActivityIndicator color={palette.primary} />
+          <Text style={styles.messageText}>Loading students...</Text>
+        </View>
       ) : error ? (
-        <View style={styles.state} accessibilityLiveRegion="polite"><Text style={styles.error}>{error}</Text><Pressable accessibilityRole="button" onPress={loadStudents}><Text style={styles.link}>Try Again</Text></Pressable></View>
+        <View style={styles.message}>
+          <Text style={styles.error}>{error}</Text>
+          <Pressable accessibilityRole="button" style={styles.retry} onPress={() => void loadStudents()}>
+            <Text style={styles.retryText}>Try again</Text>
+          </Pressable>
+        </View>
       ) : (
         <FlatList
           data={filteredStudents}
           keyExtractor={(item, index) => String(item.id ?? index)}
           renderItem={({ item }) => <StudentCard student={item} />}
-          ListEmptyComponent={<View style={styles.state}><Text style={styles.text}>No students found.</Text></View>}
+          contentContainerStyle={styles.list}
+          ListEmptyComponent={<Text style={styles.messageText}>No students found.</Text>}
         />
       )}
     </View>
@@ -66,12 +86,62 @@ export default function StudentsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 24, backgroundColor: '#f2f5fa' },
-  title: { fontSize: 28, fontWeight: '700', color: '#17324d', marginBottom: 20 },
-  input: { padding: 14, borderWidth: 1, borderColor: '#c6d2e1', borderRadius: 8, backgroundColor: '#ffffff', color: '#17324d', marginBottom: 20 },
-  state: { padding: 24, gap: 12, alignItems: 'center' },
-  text: { color: '#536579' },
-  note: { color: '#536579', fontSize: 12 },
-  error: { color: '#b42318' },
-  link: { color: '#245bb2', padding: 12 },
+  page: {
+    flex: 1,
+    backgroundColor: palette.background,
+    padding: 20,
+  },
+  title: {
+    color: palette.ink,
+    fontSize: 26,
+    fontWeight: '700',
+  },
+  subtitle: {
+    color: palette.muted,
+    fontSize: 13,
+    marginTop: 4,
+    marginBottom: 16,
+  },
+  search: {
+    height: 44,
+    backgroundColor: palette.surface,
+    borderColor: palette.line,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    marginBottom: 14,
+  },
+  list: {
+    gap: 10,
+    paddingBottom: 20,
+  },
+  message: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+    padding: 20,
+    backgroundColor: palette.surface,
+    borderRadius: 10,
+  },
+  messageText: {
+    color: palette.muted,
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  error: {
+    color: palette.danger,
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  retry: {
+    backgroundColor: palette.primary,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 7,
+  },
+  retryText: {
+    color: palette.surface,
+    fontWeight: '600',
+  },
 });

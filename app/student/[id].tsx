@@ -3,6 +3,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { type Student } from '@/components/StudentCard';
 import { API_BASE_URL } from '@/constants/api';
+import { palette } from '@/constants/palette';
 import { useAuth } from '@/hooks/useAuth';
 
 export default function StudentDetailsScreen() {
@@ -51,29 +52,135 @@ export default function StudentDetailsScreen() {
   }, [loadStudent]);
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Student Details</Text>
-      {loading ? <View style={styles.state}><ActivityIndicator color="#245bb2" /><Text style={styles.text}>Loading student…</Text></View>
-        : error ? <Text style={styles.error} accessibilityLiveRegion="polite">{error}</Text>
-        : !student ? <Text style={styles.text}>No student record available.</Text> : null}
-      <View style={styles.card}>
-        <Text style={styles.text}>ID: {id || 'Not available'}</Text>
-        <Text style={styles.text}>Name: {student?.name || '—'}</Text>
-        <Text style={styles.text}>Email: {student?.email || '—'}</Text>
-        <Text style={styles.text}>Course: {student?.course || '—'}</Text>
+    <ScrollView contentContainerStyle={styles.page}>
+      <View style={styles.content}>
+        <Pressable
+          accessibilityRole="button"
+          style={({ pressed }) => [styles.back, pressed && styles.pressed]}
+          onPress={() => router.back()}
+        >
+          <Text style={styles.backText}>← Student directory</Text>
+        </Pressable>
+
+        <Text style={styles.title}>Student details</Text>
+        <Text style={styles.subtitle}>Student ID: {id || '—'}</Text>
+
+        {loading ? (
+          <View style={styles.message}>
+            <ActivityIndicator color={palette.primary} />
+            <Text style={styles.messageText}>Loading student...</Text>
+          </View>
+        ) : error ? (
+          <View style={styles.message} accessibilityLiveRegion="polite">
+            <Text style={styles.error}>{error}</Text>
+            <Pressable accessibilityRole="button" style={styles.retry} onPress={() => void loadStudent()}>
+              <Text style={styles.retryText}>Try again</Text>
+            </Pressable>
+          </View>
+        ) : student ? (
+          <View style={styles.card}>
+            <Text style={styles.name}>{student.name || 'Name not available'}</Text>
+            <Text style={styles.label}>Email</Text>
+            <Text style={styles.value}>{student.email || 'Not available'}</Text>
+            <Text style={styles.label}>Department</Text>
+            <Text style={styles.value}>{student.course || 'Not available'}</Text>
+            <Text style={styles.label}>Student ID</Text>
+            <Text style={styles.value}>{String(student.id || id)}</Text>
+          </View>
+        ) : null}
+
+        <Text style={styles.note}>Student records are sample data from the demo API.</Text>
       </View>
-      <Pressable accessibilityRole="button" style={styles.button} onPress={() => router.back()}><Text style={styles.buttonText}>Back</Text></Pressable>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flexGrow: 1, padding: 24, gap: 20, backgroundColor: '#f2f5fa' },
-  title: { color: '#17324d', fontSize: 28, fontWeight: '700' },
-  state: { gap: 12, alignItems: 'center' },
-  card: { backgroundColor: '#ffffff', padding: 20, gap: 16, borderRadius: 12 },
-  text: { color: '#536579', fontSize: 16 },
-  error: { color: '#b42318' },
-  button: { backgroundColor: '#245bb2', padding: 16, borderRadius: 8, alignItems: 'center' },
-  buttonText: { color: '#ffffff', fontWeight: '600' },
+  page: {
+    flexGrow: 1,
+    backgroundColor: palette.background,
+    padding: 20,
+  },
+  content: {
+    width: '100%',
+    maxWidth: 720,
+    alignSelf: 'center',
+    gap: 12,
+  },
+  back: {
+    alignSelf: 'flex-start',
+    paddingVertical: 8,
+  },
+  backText: {
+    color: palette.primary,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  pressed: {
+    opacity: 0.75,
+  },
+  title: {
+    color: palette.ink,
+    fontSize: 26,
+    fontWeight: '700',
+  },
+  subtitle: {
+    color: palette.muted,
+    fontSize: 13,
+    marginBottom: 6,
+  },
+  message: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+    minHeight: 150,
+    padding: 20,
+    backgroundColor: palette.surface,
+    borderRadius: 10,
+  },
+  messageText: {
+    color: palette.muted,
+    fontSize: 14,
+  },
+  error: {
+    color: palette.danger,
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  retry: {
+    backgroundColor: palette.primary,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 7,
+  },
+  retryText: {
+    color: palette.surface,
+    fontWeight: '600',
+  },
+  card: {
+    backgroundColor: palette.surface,
+    borderRadius: 10,
+    padding: 18,
+    gap: 8,
+  },
+  name: {
+    color: palette.ink,
+    fontSize: 20,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  label: {
+    color: palette.muted,
+    fontSize: 12,
+    marginTop: 4,
+  },
+  value: {
+    color: palette.ink,
+    fontSize: 14,
+  },
+  note: {
+    color: palette.muted,
+    fontSize: 12,
+    marginTop: 4,
+  },
 });

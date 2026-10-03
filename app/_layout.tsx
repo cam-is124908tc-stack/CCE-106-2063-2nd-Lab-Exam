@@ -12,7 +12,7 @@ function RootNavigator() {
   return (
     <Stack initialRouteName="sign-in" screenOptions={{ headerTintColor: '#17324d' }}>
       <Stack.Protected guard={!token}>
-        <Stack.Screen name="sign-in" options={{ title: 'Sign In' }} />
+        <Stack.Screen name="sign-in" options={{ headerShown: false }} />
       </Stack.Protected>
       <Stack.Protected guard={!!token}>
         <Stack.Screen name="(app)" options={{ headerShown: false }} />
@@ -26,4 +26,10 @@ export default function RootLayout() {
   return <AuthProvider><RootNavigator /></AuthProvider>;
 }
 
-const styles = StyleSheet.create({ loading: { flex: 1, justifyContent: 'center', alignItems: 'center' } });
+const styles = StyleSheet.create({
+  loading: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+});

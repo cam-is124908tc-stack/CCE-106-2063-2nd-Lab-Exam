@@ -1,11 +1,13 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { palette } from '@/constants/palette';
 
 export type Student = {
   id?: string | number;
   name?: string | null;
   email?: string | null;
   course?: string | null;
+  image?: string | null;
 };
 
 export default function StudentCard({ student }: { student: Student }) {
@@ -17,21 +19,56 @@ export default function StudentCard({ student }: { student: Student }) {
   };
 
   return (
-    <View style={styles.card}>
-      <Text style={styles.name}>{student.name || 'Name not available'}</Text>
-      <Text style={styles.text}>{student.email || 'Email not available'}</Text>
-      {student.course ? <Text style={styles.text}>{student.course}</Text> : null}
-      <Pressable accessibilityRole="button" style={styles.button} onPress={handleViewDetails}>
-        <Text style={styles.buttonText}>View Details</Text>
-      </Pressable>
-    </View>
+    <Pressable
+      accessibilityRole="button"
+      onPress={handleViewDetails}
+      style={({ pressed }) => [styles.card, pressed && styles.pressed]}
+    >
+      <View style={styles.info}>
+        <Text style={styles.name} numberOfLines={1}>{student.name || 'Name not available'}</Text>
+        <Text style={styles.email} numberOfLines={1}>{student.email || 'Email not available'}</Text>
+        {student.course ? <Text style={styles.course}>{student.course}</Text> : null}
+      </View>
+      <Text style={styles.link}>View</Text>
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  card: { padding: 20, borderRadius: 12, backgroundColor: '#ffffff', marginBottom: 12, gap: 8 },
-  name: { color: '#17324d', fontSize: 18, fontWeight: '600' },
-  text: { color: '#536579' },
-  button: { paddingVertical: 12, alignSelf: 'flex-start' },
-  buttonText: { color: '#245bb2', fontWeight: '600' },
+  card: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    padding: 14,
+    backgroundColor: palette.surface,
+    borderWidth: 1,
+    borderColor: palette.line,
+    borderRadius: 8,
+  },
+  pressed: {
+    opacity: 0.75,
+  },
+  info: {
+    flex: 1,
+    gap: 4,
+  },
+  name: {
+    color: palette.ink,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  email: {
+    color: palette.muted,
+    fontSize: 12,
+  },
+  course: {
+    color: palette.muted,
+    fontSize: 12,
+    marginTop: 2,
+  },
+  link: {
+    color: palette.primary,
+    fontSize: 13,
+    fontWeight: '600',
+  },
 });
